@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import * as sql from 'mssql';
 import { appConfig } from '../config/app.config';
 import { MSSQL_POOL_MANAGER } from '../database/database.constants';
@@ -23,6 +28,8 @@ interface DailyTotalsRow {
 
 @Injectable()
 export class GpAnalysisService {
+  private readonly logger = new Logger(GpAnalysisService.name);
+
   constructor(
     private readonly branchesService: BranchesService,
     @Inject(MSSQL_POOL_MANAGER)
@@ -33,9 +40,33 @@ export class GpAnalysisService {
     this.validateDate(date);
 
     const branches = await this.branchesService.findBranches();
-    const results = await Promise.all(
+    const settledResults = await Promise.allSettled(
       branches.map((branch) => this.getBranchDailyTotals(branch, date)),
     );
+    const results: Omit<DailyGpAnalysis, 'count'>[] = [];
+    let firstError: unknown;
+
+    settledResults.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        results.push(result.value);
+        return;
+      }
+
+      firstError ??= result.reason;
+      const branch = branches[index];
+      const message =
+        result.reason instanceof Error
+          ? result.reason.message
+          : String(result.reason);
+
+      this.logger.warn(
+        `Skipping branch "${branch.branchLocation}" using database "${branch.mainServerDatabaseName}": ${message}`,
+      );
+    });
+
+    if (branches.length > 0 && results.length === 0) {
+      throw firstError;
+    }
 
     return results.map((result, index) => ({
       count: index + 1,

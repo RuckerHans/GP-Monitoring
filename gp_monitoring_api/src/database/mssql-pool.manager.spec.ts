@@ -67,4 +67,26 @@ describe('MssqlPoolManager', () => {
 
     expect(ConnectionPool).toHaveBeenCalledTimes(2);
   });
+
+  it('identifies each database with a login failure', async () => {
+    const logError = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+    const loginError = Object.assign(new Error('Login failed'), {
+      code: 'ELOGIN',
+    });
+    connect.mockRejectedValue(loginError);
+    const manager = new MssqlPoolManager();
+
+    await Promise.allSettled([
+      manager.getPool('branch_one'),
+      manager.getPool('branch_two'),
+    ]);
+
+    expect(logError).toHaveBeenCalledTimes(2);
+    expect(logError).toHaveBeenCalledWith(
+      expect.stringContaining('database "branch_one"'),
+    );
+    expect(logError).toHaveBeenCalledWith(
+      expect.stringContaining('database "branch_two"'),
+    );
+  });
 });

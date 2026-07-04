@@ -6,6 +6,7 @@ import { appConfig } from '../config/app.config';
 export class MssqlPoolManager implements OnApplicationShutdown {
   private readonly logger = new Logger(MssqlPoolManager.name);
   private readonly pools = new Map<string, Promise<sql.ConnectionPool>>();
+  private readonly reportedLoginFailures = new Set<string>();
 
   getPool(database = appConfig.mssql.database): Promise<sql.ConnectionPool> {
     const cleanDatabase = this.assertSafeIdentifier(database);
@@ -13,7 +14,7 @@ export class MssqlPoolManager implements OnApplicationShutdown {
     if (!this.pools.has(cleanDatabase)) {
       const poolPromise = this.createPool(cleanDatabase).catch((error) => {
         this.pools.delete(cleanDatabase);
-        throw this.describeConnectionError(error);
+        throw this.describeConnectionError(error, cleanDatabase);
       });
 
       this.pools.set(cleanDatabase, poolPromise);
@@ -66,7 +67,7 @@ export class MssqlPoolManager implements OnApplicationShutdown {
     return pool.connect();
   }
 
-  private describeConnectionError(error: unknown): Error {
+  private describeConnectionError(error: unknown, database: string): Error {
     if (error instanceof Error && 'code' in error && error.code === 'ELOGIN') {
       const account =
         appConfig.mssql.authType === 'ntlm'
@@ -74,12 +75,16 @@ export class MssqlPoolManager implements OnApplicationShutdown {
           : appConfig.mssql.user;
       const guidance =
         appConfig.mssql.authType === 'ntlm'
-          ? 'Verify the Windows account, password, domain, and SQL Server access.'
-          : 'Verify the SQL login and password, and confirm SQL Server mixed-mode authentication is enabled.';
+          ? 'Verify the Windows account and its access to this database.'
+          : 'Verify that the database exists and this SQL login has access to it.';
+      const failureKey = `${appConfig.mssql.authType}:${appConfig.mssql.host}:${account}:${database}`;
 
-      this.logger.error(
-        `MSSQL rejected ${appConfig.mssql.authType} login "${account}" on ${appConfig.mssql.host}. ${guidance}`,
-      );
+      if (!this.reportedLoginFailures.has(failureKey)) {
+        this.reportedLoginFailures.add(failureKey);
+        this.logger.error(
+          `MSSQL rejected ${appConfig.mssql.authType} login "${account}" for database "${database}" on ${appConfig.mssql.host}. ${guidance}`,
+        );
+      }
     }
 
     return error instanceof Error ? error : new Error(String(error));
