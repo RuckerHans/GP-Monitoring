@@ -50,16 +50,24 @@ Required variables:
 - `MYSQL_DATABASE`
 - `MYSQL_PORT` (default: `3306`)
 - `MSSQL_HOST`
+- `MSSQL_AUTH_TYPE` (`sql` by default; use `ntlm` for a Windows/domain account)
 - `MSSQL_USER`
 - `MSSQL_PASSWORD`
 - `MSSQL_DATABASE`
 - `MSSQL_PORT` (default: `1433`)
+- `MSSQL_DOMAIN` (required only when `MSSQL_AUTH_TYPE=ntlm`)
 - `GP_ANALYSIS_TABLE` (default: `dbo.gp_analysis_header_by_category_daily`)
 
 Optional variables:
 
 - `JWT_EXPIRES_IN` (default: `8h`)
 - `CORS_ORIGINS`
+
+The Node `mssql` package is the equivalent of PHP's `sqlsrv`/`pdo_sqlsrv`
+connection layer. For a SQL Server login, keep `MSSQL_AUTH_TYPE=sql`. If the
+credentials belong to a Windows/domain account, use `MSSQL_AUTH_TYPE=ntlm` and
+set `MSSQL_DOMAIN`. An `ELOGIN` response means SQL Server was reached but
+rejected the selected account or its access.
 
 ## Setup
 
