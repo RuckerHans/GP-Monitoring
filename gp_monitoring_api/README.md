@@ -56,7 +56,7 @@ Required variables:
 - `MSSQL_DATABASE`
 - `MSSQL_PORT` (default: `1433`)
 - `MSSQL_DOMAIN` (required only when `MSSQL_AUTH_TYPE=ntlm`)
-- `GP_ANALYSIS_TABLE` (default: `dbo.gp_analysis_header_by_category_daily`)
+- `GP_ANALYSIS_TABLE` (default: `dbo.gp_analysis_header_by_daily`)
 
 Optional variables:
 

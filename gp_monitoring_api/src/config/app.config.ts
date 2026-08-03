@@ -63,6 +63,6 @@ export const appConfig = {
     port: numberEnv('MSSQL_PORT', 1433),
     analysisTable:
       process.env.GP_ANALYSIS_TABLE ??
-      'dbo.gp_analysis_header_by_category_daily',
+      'dbo.gp_analysis_header_by_daily',
   },
 };
