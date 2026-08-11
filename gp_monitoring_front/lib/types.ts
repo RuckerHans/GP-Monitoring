@@ -29,6 +29,11 @@ export interface MonthlyGpAnalysis {
   mainServerDatabaseName: string;
 }
 
+export interface GpDataRange {
+  earliestDate: string | null;
+  latestDate: string | null;
+}
+
 export interface Branch {
   id: string;
   branchCode: string;

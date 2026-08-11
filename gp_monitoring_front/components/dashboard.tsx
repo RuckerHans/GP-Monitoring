@@ -14,15 +14,23 @@ import {
   Table2
 } from "lucide-react";
 import {
+  buildMonthValue,
   formatDisplayDate,
   formatDisplayMonth,
   getCurrentInputMonth,
-  getMonthOptions,
-  getYesterdayInputDate
+  getYearOptions,
+  getYesterdayInputDate,
+  MONTH_NAMES
 } from "@/lib/date";
 import { formatCompactMoney, formatGp, formatMoney } from "@/lib/format";
 import { Branch, DailyGpAnalysis, MonthlyGpAnalysis, User } from "@/lib/types";
-import { useGetDailyQuery, useGetMonthlyQuery, useGetBranchesQuery, useLogoutMutation } from "@/lib/store/api/gpApi";
+import {
+  useGetDailyQuery,
+  useGetMonthlyQuery,
+  useGetDataRangeQuery,
+  useGetBranchesQuery,
+  useLogoutMutation
+} from "@/lib/store/api/gpApi";
 import { useAppSelector, useAppDispatch } from "@/lib/store/hooks";
 import { clearUser, setUser } from "@/lib/store/slices/authSlice";
 
@@ -40,13 +48,18 @@ export function Dashboard({ initialUser }: DashboardProps) {
   const dispatch = useAppDispatch();
   const user = useAppSelector((s: any) => s.auth.user);
 
+  const currentMonthValue = getCurrentInputMonth();
+
   const [mode, setMode] = useState<ReportMode>("daily");
   const [date, setDate] = useState(getYesterdayInputDate());
-  const [month, setMonth] = useState(getCurrentInputMonth());
+  const [year, setYear] = useState(() => Number(currentMonthValue.slice(0, 4)));
+  const [monthNum, setMonthNum] = useState(() => currentMonthValue.slice(5, 7));
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("gp");
   const [sortKey, setSortKey] = useState<SortKey>("count");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  const month = useMemo(() => buildMonthValue(year, monthNum), [year, monthNum]);
 
   const {
     data: dailyRows = [],
@@ -60,10 +73,14 @@ export function Dashboard({ initialUser }: DashboardProps) {
     refetch: refetchMonthly,
     error: monthlyError
   } = useGetMonthlyQuery(month, { skip: mode !== "monthly" });
+  const { data: dataRange } = useGetDataRangeQuery();
   const { data: branches = [], isLoading: isBranchesLoading, error: branchesError } = useGetBranchesQuery(undefined);
   const [logoutMutation] = useLogoutMutation();
 
-  const monthOptions = useMemo(() => getMonthOptions(), []);
+  const yearOptions = useMemo(
+    () => getYearOptions(dataRange?.earliestDate ? Number(dataRange.earliestDate.slice(0, 4)) : undefined),
+    [dataRange]
+  );
   const activeRows: ActiveRow[] = mode === "daily" ? dailyRows : monthlyRows;
   const activeIsLoading = mode === "daily" ? isDailyLoading : isMonthlyLoading;
   const activeError = mode === "daily" ? dailyError : monthlyError;
@@ -326,16 +343,28 @@ export function Dashboard({ initialUser }: DashboardProps) {
         ) : (
           <label className="date-control month-control">
             <CalendarRange size={18} />
-            <span>Month</span>
-            <span className="select-wrap">
-              <select value={month} onChange={(event) => setMonth(event.target.value)}>
-                {monthOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={16} className="select-chevron" />
+            <span>Period</span>
+            <span className="period-picker">
+              <span className="select-wrap select-wrap-month">
+                <select value={monthNum} onChange={(event) => setMonthNum(event.target.value)}>
+                  {MONTH_NAMES.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="select-chevron" />
+              </span>
+              <span className="select-wrap select-wrap-year">
+                <select value={year} onChange={(event) => setYear(Number(event.target.value))}>
+                  {yearOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="select-chevron" />
+              </span>
             </span>
           </label>
         )}

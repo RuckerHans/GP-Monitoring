@@ -178,4 +178,78 @@ describe('GpAnalysisService', () => {
       );
     });
   });
+
+  describe('findDataRange', () => {
+    it('returns the earliest and latest dates across branches', async () => {
+      mssqlPoolManager.getPool
+        .mockResolvedValueOnce({
+          request: () => ({
+            input: jest.fn(),
+            query: jest.fn().mockResolvedValue({
+              recordset: [
+                { earliestDate: '2023-05-01', latestDate: '2026-07-04' },
+              ],
+            }),
+          }),
+        })
+        .mockResolvedValueOnce({
+          request: () => ({
+            input: jest.fn(),
+            query: jest.fn().mockResolvedValue({
+              recordset: [
+                { earliestDate: '2021-01-15', latestDate: '2026-06-30' },
+              ],
+            }),
+          }),
+        });
+      const service = new GpAnalysisService(
+        branchesService as unknown as BranchesService,
+        mssqlPoolManager as unknown as MssqlPoolManager,
+      );
+
+      await expect(service.findDataRange()).resolves.toEqual({
+        earliestDate: '2021-01-15',
+        latestDate: '2026-07-04',
+      });
+    });
+
+    it('skips a branch that fails without failing the whole request', async () => {
+      mssqlPoolManager.getPool
+        .mockResolvedValueOnce({
+          request: () => ({
+            input: jest.fn(),
+            query: jest.fn().mockResolvedValue({
+              recordset: [
+                { earliestDate: '2023-05-01', latestDate: '2026-07-04' },
+              ],
+            }),
+          }),
+        })
+        .mockRejectedValueOnce(new Error('Login failed'));
+      const service = new GpAnalysisService(
+        branchesService as unknown as BranchesService,
+        mssqlPoolManager as unknown as MssqlPoolManager,
+      );
+
+      await expect(service.findDataRange()).resolves.toEqual({
+        earliestDate: '2023-05-01',
+        latestDate: '2026-07-04',
+      });
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('database "branch_two"'),
+      );
+    });
+
+    it('throws when every configured branch fails', async () => {
+      const connectionError = new Error('SQL Server unavailable');
+      mssqlPoolManager.getPool.mockRejectedValue(connectionError);
+      const service = new GpAnalysisService(
+        branchesService as unknown as BranchesService,
+        mssqlPoolManager as unknown as MssqlPoolManager,
+      );
+
+      await expect(service.findDataRange()).rejects.toBe(connectionError);
+    });
+  });
 });

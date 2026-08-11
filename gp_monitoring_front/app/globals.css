@@ -403,9 +403,22 @@ button:disabled {
   flex: 1 1 280px;
 }
 
+.period-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .month-control .select-wrap {
   position: relative;
-  width: 170px;
+}
+
+.select-wrap-month {
+  width: 148px;
+}
+
+.select-wrap-year {
+  width: 96px;
 }
 
 .month-control select {
@@ -791,10 +804,16 @@ tfoot td {
 
   .date-control,
   .date-control input,
-  .month-control .select-wrap,
+  .period-picker,
   .segmented-control,
   .icon-text-button,
   .ghost-button {
     width: 100%;
+  }
+
+  .select-wrap-month,
+  .select-wrap-year {
+    flex: 1 1 0;
+    width: auto;
   }
 }

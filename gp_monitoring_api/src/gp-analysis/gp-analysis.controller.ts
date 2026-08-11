@@ -16,4 +16,9 @@ export class GpAnalysisController {
   findMonthlyAnalysis(@Query('month') month?: string) {
     return this.gpAnalysisService.findMonthlyAnalysis(month);
   }
+
+  @Get('data-range')
+  findDataRange() {
+    return this.gpAnalysisService.findDataRange();
+  }
 }

@@ -46,20 +46,27 @@ function formatInputMonth(date: Date): string {
   return `${year}-${month}`;
 }
 
-export function getMonthOptions(count = 12): { value: string; label: string }[] {
-  const options: { value: string; label: string }[] = [];
-  const cursor = new Date();
-  cursor.setDate(1);
+const DEFAULT_YEAR_LOOKBACK = 5;
 
-  for (let index = 0; index < count; index += 1) {
-    options.push({
-      value: formatInputMonth(cursor),
-      label: new Intl.DateTimeFormat("en-PH", { month: "long", year: "numeric" }).format(cursor)
-    });
-    cursor.setMonth(cursor.getMonth() - 1);
+export function getYearOptions(earliestYear?: number): { value: number; label: string }[] {
+  const currentYear = new Date().getFullYear();
+  const startYear = earliestYear && earliestYear <= currentYear ? earliestYear : currentYear - DEFAULT_YEAR_LOOKBACK;
+  const options: { value: number; label: string }[] = [];
+
+  for (let year = currentYear; year >= startYear; year -= 1) {
+    options.push({ value: year, label: String(year) });
   }
 
   return options;
+}
+
+export const MONTH_NAMES: { value: string; label: string }[] = Array.from({ length: 12 }, (_, index) => ({
+  value: String(index + 1).padStart(2, "0"),
+  label: new Intl.DateTimeFormat("en-PH", { month: "long" }).format(new Date(2000, index, 1))
+}));
+
+export function buildMonthValue(year: number, month: string): string {
+  return `${year}-${month}`;
 }
 
 export function formatDisplayMonth(month: string | null): string {

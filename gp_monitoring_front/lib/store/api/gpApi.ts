@@ -1,10 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { DailyGpAnalysis, MonthlyGpAnalysis, Branch, LoginResponse, User } from "@/lib/types";
+import { DailyGpAnalysis, MonthlyGpAnalysis, GpDataRange, Branch, LoginResponse, User } from "@/lib/types";
 
 export const gpApi = createApi({
   reducerPath: "gpApi",
   baseQuery: fetchBaseQuery({ baseUrl: "" }),
-  tagTypes: ["Daily", "Monthly", "Branches", "Auth"],
+  tagTypes: ["Daily", "Monthly", "DataRange", "Branches", "Auth"],
   endpoints: (build) => ({
     getDaily: build.query<DailyGpAnalysis[], string | void>({
       query: (date) => ({ url: `/api/gp-analysis/daily${date ? `?date=${encodeURIComponent(date)}` : ""}` }),
@@ -13,6 +13,10 @@ export const gpApi = createApi({
     getMonthly: build.query<MonthlyGpAnalysis[], string | void>({
       query: (month) => ({ url: `/api/gp-analysis/monthly${month ? `?month=${encodeURIComponent(month)}` : ""}` }),
       providesTags: ["Monthly"]
+    }),
+    getDataRange: build.query<GpDataRange, void>({
+      query: () => ({ url: "/api/gp-analysis/data-range" }),
+      providesTags: ["DataRange"]
     }),
     getBranches: build.query<Branch[], void>({
       query: () => ({ url: "/api/branches" }),
@@ -36,6 +40,7 @@ export const gpApi = createApi({
 export const {
   useGetDailyQuery,
   useGetMonthlyQuery,
+  useGetDataRangeQuery,
   useGetBranchesQuery,
   useLoginMutation,
   useLogoutMutation,

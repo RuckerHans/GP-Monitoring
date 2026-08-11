@@ -42,6 +42,16 @@ interface MonthlyTotalsRow {
   profit: number | null;
 }
 
+export interface GpDataRange {
+  earliestDate: string | null;
+  latestDate: string | null;
+}
+
+interface DataRangeRow {
+  earliestDate: string | null;
+  latestDate: string | null;
+}
+
 @Injectable()
 export class GpAnalysisService {
   private readonly logger = new Logger(GpAnalysisService.name);
@@ -207,6 +217,75 @@ export class GpAnalysisService {
       profit,
       gp: sales === 0 ? 0 : (profit / sales) * 100,
       mainServerDatabaseName: branch.mainServerDatabaseName,
+    };
+  }
+
+  async findDataRange(): Promise<GpDataRange> {
+    const branches = await this.branchesService.findBranches();
+    const settledResults = await Promise.allSettled(
+      branches.map((branch) => this.getBranchDataRange(branch)),
+    );
+    const results: GpDataRange[] = [];
+    let firstError: unknown;
+
+    settledResults.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        results.push(result.value);
+        return;
+      }
+
+      firstError ??= result.reason;
+      const branch = branches[index];
+      const message =
+        result.reason instanceof Error
+          ? result.reason.message
+          : String(result.reason);
+
+      this.logger.warn(
+        `Skipping branch "${branch.branchLocation}" using database "${branch.mainServerDatabaseName}": ${message}`,
+      );
+    });
+
+    if (branches.length > 0 && results.length === 0) {
+      throw firstError;
+    }
+
+    const earliestDates = results
+      .map((result) => result.earliestDate)
+      .filter((value): value is string => value !== null);
+    const latestDates = results
+      .map((result) => result.latestDate)
+      .filter((value): value is string => value !== null);
+
+    return {
+      earliestDate: earliestDates.length
+        ? earliestDates.reduce((min, value) => (value < min ? value : min))
+        : null,
+      latestDate: latestDates.length
+        ? latestDates.reduce((max, value) => (value > max ? value : max))
+        : null,
+    };
+  }
+
+  private async getBranchDataRange(branch: Branch): Promise<GpDataRange> {
+    const pool = await this.mssqlPoolManager.getPool(
+      branch.mainServerDatabaseName,
+    );
+    const request = pool.request();
+    const tableName = this.getAnalysisTableName();
+
+    const queryResult = await request.query<DataRangeRow>(`
+      SELECT
+        CONVERT(varchar(10), MIN(date_), 23) AS earliestDate,
+        CONVERT(varchar(10), MAX(date_), 23) AS latestDate
+      FROM ${tableName}
+    `);
+
+    const row = queryResult.recordset[0];
+
+    return {
+      earliestDate: row?.earliestDate ?? null,
+      latestDate: row?.latestDate ?? null,
     };
   }
 
