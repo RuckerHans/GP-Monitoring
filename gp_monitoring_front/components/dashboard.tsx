@@ -6,6 +6,7 @@ import {
   Building2,
   CalendarDays,
   CalendarRange,
+  ChevronDown,
   FileSpreadsheet,
   LogOut,
   RefreshCcw,
@@ -323,16 +324,19 @@ export function Dashboard({ initialUser }: DashboardProps) {
             <input value={date} onChange={(event) => setDate(event.target.value)} type="date" />
           </label>
         ) : (
-          <label className="date-control">
+          <label className="date-control month-control">
             <CalendarRange size={18} />
             <span>Month</span>
-            <select value={month} onChange={(event) => setMonth(event.target.value)}>
-              {monthOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <span className="select-wrap">
+              <select value={month} onChange={(event) => setMonth(event.target.value)}>
+                {monthOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="select-chevron" />
+            </span>
           </label>
         )}
 
