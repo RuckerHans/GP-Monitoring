@@ -5,22 +5,31 @@ import {
   ArrowDownUp,
   Building2,
   CalendarDays,
-  Download,
+  CalendarRange,
+  FileSpreadsheet,
   LogOut,
   RefreshCcw,
   Search,
   Table2
 } from "lucide-react";
-import { formatDisplayDate, getYesterdayInputDate } from "@/lib/date";
+import {
+  formatDisplayDate,
+  formatDisplayMonth,
+  getCurrentInputMonth,
+  getMonthOptions,
+  getYesterdayInputDate
+} from "@/lib/date";
 import { formatCompactMoney, formatGp, formatMoney } from "@/lib/format";
-import { Branch, DailyGpAnalysis, User } from "@/lib/types";
-import { useGetDailyQuery, useGetBranchesQuery, useLogoutMutation } from "@/lib/store/api/gpApi";
+import { Branch, DailyGpAnalysis, MonthlyGpAnalysis, User } from "@/lib/types";
+import { useGetDailyQuery, useGetMonthlyQuery, useGetBranchesQuery, useLogoutMutation } from "@/lib/store/api/gpApi";
 import { useAppSelector, useAppDispatch } from "@/lib/store/hooks";
 import { clearUser, setUser } from "@/lib/store/slices/authSlice";
 
 type SortKey = "count" | "branch" | "sales" | "profit" | "gp";
 type SortDirection = "asc" | "desc";
 type Tab = "gp" | "branches";
+type ReportMode = "daily" | "monthly";
+type ActiveRow = DailyGpAnalysis | MonthlyGpAnalysis;
 
 interface DashboardProps {
   initialUser: User | null;
@@ -30,23 +39,42 @@ export function Dashboard({ initialUser }: DashboardProps) {
   const dispatch = useAppDispatch();
   const user = useAppSelector((s: any) => s.auth.user);
 
+  const [mode, setMode] = useState<ReportMode>("daily");
   const [date, setDate] = useState(getYesterdayInputDate());
+  const [month, setMonth] = useState(getCurrentInputMonth());
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("gp");
   const [sortKey, setSortKey] = useState<SortKey>("count");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
-  const { data: rows = [], isLoading, refetch: refetchDaily, error: dailyError } = useGetDailyQuery(date);
+  const {
+    data: dailyRows = [],
+    isLoading: isDailyLoading,
+    refetch: refetchDaily,
+    error: dailyError
+  } = useGetDailyQuery(date, { skip: mode !== "daily" });
+  const {
+    data: monthlyRows = [],
+    isLoading: isMonthlyLoading,
+    refetch: refetchMonthly,
+    error: monthlyError
+  } = useGetMonthlyQuery(month, { skip: mode !== "monthly" });
   const { data: branches = [], isLoading: isBranchesLoading, error: branchesError } = useGetBranchesQuery(undefined);
   const [logoutMutation] = useLogoutMutation();
 
-  const error = (dailyError as any)?.data?.message ?? (branchesError as any)?.data?.message ?? "";
+  const monthOptions = useMemo(() => getMonthOptions(), []);
+  const activeRows: ActiveRow[] = mode === "daily" ? dailyRows : monthlyRows;
+  const activeIsLoading = mode === "daily" ? isDailyLoading : isMonthlyLoading;
+  const activeError = mode === "daily" ? dailyError : monthlyError;
+  const activeLabel = mode === "daily" ? formatDisplayDate(date) : formatDisplayMonth(month);
+
+  const error = (activeError as any)?.data?.message ?? (branchesError as any)?.data?.message ?? "";
 
   const filteredRows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return [...rows]
-      .filter((row: DailyGpAnalysis) => {
+    return [...activeRows]
+      .filter((row: ActiveRow) => {
         if (!normalizedQuery) {
           return true;
         }
@@ -56,8 +84,8 @@ export function Dashboard({ initialUser }: DashboardProps) {
           row.mainServerDatabaseName.toLowerCase().includes(normalizedQuery)
         );
       })
-        .sort((first: DailyGpAnalysis, second: DailyGpAnalysis) => compareRows(first, second, sortKey, sortDirection));
-  }, [query, rows, sortDirection, sortKey]);
+        .sort((first: ActiveRow, second: ActiveRow) => compareRows(first, second, sortKey, sortDirection));
+  }, [query, activeRows, sortDirection, sortKey]);
 
   const filteredBranches = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -94,18 +122,16 @@ export function Dashboard({ initialUser }: DashboardProps) {
 
   // removed safeFetch in favor of RTK Query hooks
 
-  const loadDailyGp = useCallback(async (reportDate: string) => {
-    setDate(reportDate);
-    await refetchDaily();
-  }, [refetchDaily]);
-
-  const loadBranches = useCallback(async () => {
-    // data is loaded via useGetBranchesQuery; this is a noop helper kept for parity
-    return;
-  }, []);
+  const refresh = useCallback(async () => {
+    if (mode === "daily") {
+      await refetchDaily();
+    } else {
+      await refetchMonthly();
+    }
+  }, [mode, refetchDaily, refetchMonthly]);
 
   useEffect(() => {
-    // initial fetch handled by useGetDailyQuery
+    // initial fetch handled by useGetDailyQuery / useGetMonthlyQuery
   }, []);
 
   useEffect(() => {
@@ -140,30 +166,117 @@ export function Dashboard({ initialUser }: DashboardProps) {
     setSortDirection(nextKey === "branch" ? "asc" : "desc");
   }
 
-  function exportCsv() {
-    const csv = [
-      ["Count", "Date", "Branch", "Sales", "Profit", "GP", "Database"],
-      ...filteredRows.map((row) => [
-        row.count,
-        row.date ?? "",
-        row.branch,
-        row.sales,
-        row.profit,
-        row.gp,
-        row.mainServerDatabaseName
-      ])
-    ]
-      .map((line) => line.map(escapeCsv).join(","))
-      .join("\n");
+  const exportExcel = useCallback(async () => {
+    if (!filteredRows.length) {
+      return;
+    }
 
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const ExcelJS = (await import("exceljs")).default;
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("GP Monitoring");
+
+    const headers = ["Count", "Branch", "Database", "Sales", "Profit", "GP %"];
+    worksheet.columns = [
+      { key: "count" },
+      { key: "branch" },
+      { key: "database" },
+      { key: "sales" },
+      { key: "profit" },
+      { key: "gp" }
+    ];
+
+    const periodLabel =
+      mode === "daily"
+        ? `Daily GP Analysis – ${formatDisplayDate(date)}`
+        : `Monthly GP Analysis – ${formatDisplayMonth(month)}`;
+
+    worksheet.mergeCells(1, 1, 1, headers.length);
+    const titleCell = worksheet.getCell(1, 1);
+    titleCell.value = periodLabel;
+    titleCell.font = { bold: true, size: 13 };
+    titleCell.alignment = { horizontal: "center", vertical: "middle" };
+    worksheet.getRow(1).height = 26;
+
+    const headerRowIndex = 2;
+    const headerRow = worksheet.getRow(headerRowIndex);
+    headerRow.values = headers;
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F7A5C" } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+    });
+    worksheet.views = [{ state: "frozen", ySplit: headerRowIndex }];
+
+    filteredRows.forEach((row, index) => {
+      const dataRow = worksheet.addRow({
+        count: row.count,
+        branch: row.branch || "Unnamed branch",
+        database: row.mainServerDatabaseName,
+        sales: row.sales,
+        profit: row.profit,
+        gp: row.gp
+      });
+      dataRow.getCell("sales").numFmt = "#,##0.00";
+      dataRow.getCell("profit").numFmt = "#,##0.00";
+      dataRow.getCell("gp").numFmt = '0.00"%"';
+
+      if (index % 2 === 1) {
+        dataRow.eachCell((cell) => {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEDF4EF" } };
+        });
+      }
+    });
+
+    const firstDataRow = headerRowIndex + 1;
+    const lastDataRow = headerRowIndex + filteredRows.length;
+    const totalsRow = worksheet.addRow({
+      count: filteredRows.length,
+      branch: "Total",
+      sales: { formula: `SUM(D${firstDataRow}:D${lastDataRow})` },
+      profit: { formula: `SUM(E${firstDataRow}:E${lastDataRow})` }
+    });
+    totalsRow.getCell("gp").value = {
+      formula: `IF(D${totalsRow.number}=0,0,E${totalsRow.number}/D${totalsRow.number}*100)`
+    } as any;
+    totalsRow.getCell("sales").numFmt = "#,##0.00";
+    totalsRow.getCell("profit").numFmt = "#,##0.00";
+    totalsRow.getCell("gp").numFmt = '0.00"%"';
+    totalsRow.eachCell((cell) => {
+      cell.font = { bold: true };
+    });
+
+    headers.forEach((header, index) => {
+      const column = worksheet.getColumn(index + 1);
+      let maxLength = header.length;
+
+      column.eachCell({ includeEmpty: false }, (cell, rowNumber) => {
+        if (rowNumber === 1) {
+          return;
+        }
+
+        const cellValue = cell.value as unknown;
+        const text =
+          cellValue && typeof cellValue === "object" && "formula" in (cellValue as Record<string, unknown>)
+            ? String((cellValue as { formula: string }).formula)
+            : String(cellValue ?? "");
+
+        maxLength = Math.max(maxLength, text.length);
+      });
+
+      column.width = maxLength + 2;
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `gp-monitoring-${date}.csv`;
+    link.download = mode === "daily" ? `gp-monitoring-daily-${date}.xlsx` : `gp-monitoring-monthly-${month}.xlsx`;
     link.click();
     URL.revokeObjectURL(url);
-  }
+  }, [filteredRows, mode, date, month]);
 
   return (
     <main className="dashboard-page">
@@ -182,11 +295,46 @@ export function Dashboard({ initialUser }: DashboardProps) {
       </header>
 
       <section className="control-strip" aria-label="Report controls">
-        <label className="date-control">
-          <CalendarDays size={18} />
-          <span>Date</span>
-          <input value={date} onChange={(event) => setDate(event.target.value)} type="date" />
-        </label>
+        <div className="segmented-control" role="tablist" aria-label="Report mode">
+          <button
+            className={mode === "daily" ? "active" : ""}
+            onClick={() => setMode("daily")}
+            role="tab"
+            type="button"
+          >
+            <CalendarDays size={16} />
+            Daily
+          </button>
+          <button
+            className={mode === "monthly" ? "active" : ""}
+            onClick={() => setMode("monthly")}
+            role="tab"
+            type="button"
+          >
+            <CalendarRange size={16} />
+            Monthly
+          </button>
+        </div>
+
+        {mode === "daily" ? (
+          <label className="date-control">
+            <CalendarDays size={18} />
+            <span>Date</span>
+            <input value={date} onChange={(event) => setDate(event.target.value)} type="date" />
+          </label>
+        ) : (
+          <label className="date-control">
+            <CalendarRange size={18} />
+            <span>Month</span>
+            <select value={month} onChange={(event) => setMonth(event.target.value)}>
+              {monthOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <label className="search-control">
           <Search size={18} />
@@ -218,13 +366,17 @@ export function Dashboard({ initialUser }: DashboardProps) {
           </button>
         </div>
 
-        <button className="icon-text-button" onClick={() => void loadDailyGp(date)} title="Refresh">
+        <button className="icon-text-button" onClick={() => void refresh()} title="Refresh">
           <RefreshCcw size={18} />
           Refresh
         </button>
-        <button className="icon-text-button" onClick={exportCsv} disabled={!filteredRows.length}>
-          <Download size={18} />
-          CSV
+        <button
+          className="icon-text-button"
+          onClick={() => void exportExcel()}
+          disabled={activeIsLoading || !filteredRows.length}
+        >
+          <FileSpreadsheet size={18} />
+          Export Excel
         </button>
       </section>
 
@@ -242,11 +394,11 @@ export function Dashboard({ initialUser }: DashboardProps) {
       {error ? <p className="data-error">{error}</p> : null}
 
       {activeTab === "gp" ? (
-        <section className="data-section" aria-label="Daily GP analysis">
+        <section className="data-section" aria-label="GP analysis">
           <div className="section-heading">
             <div>
-              <h2>Daily GP Analysis</h2>
-              <p>{formatDisplayDate(date)} branch performance</p>
+              <h2>{mode === "daily" ? "Daily GP Analysis" : "Monthly GP Analysis"}</h2>
+              <p>{activeLabel} branch performance</p>
             </div>
           </div>
 
@@ -293,8 +445,11 @@ export function Dashboard({ initialUser }: DashboardProps) {
                 </tr>
               </thead>
               <tbody>
-                {isLoading ? (
-                  <TableMessage colSpan={5} message="Loading daily GP analysis..." />
+                {activeIsLoading ? (
+                  <TableMessage
+                    colSpan={5}
+                    message={mode === "daily" ? "Loading daily GP analysis..." : "Loading monthly GP analysis..."}
+                  />
                 ) : filteredRows.length ? (
                   filteredRows.map((row) => (
                     <tr key={`${row.mainServerDatabaseName}-${row.count}`}>
@@ -313,7 +468,10 @@ export function Dashboard({ initialUser }: DashboardProps) {
                     </tr>
                   ))
                 ) : (
-                  <TableMessage colSpan={5} message="No GP data found for this date." />
+                  <TableMessage
+                    colSpan={5}
+                    message={mode === "daily" ? "No GP data found for this date." : "No GP data found for this month."}
+                  />
                 )}
               </tbody>
               <tfoot>
@@ -403,12 +561,7 @@ function TableMessage({ colSpan, message }: { colSpan: number; message: string }
   );
 }
 
-function compareRows(
-  first: DailyGpAnalysis,
-  second: DailyGpAnalysis,
-  sortKey: SortKey,
-  direction: SortDirection
-) {
+function compareRows(first: ActiveRow, second: ActiveRow, sortKey: SortKey, direction: SortDirection) {
   const modifier = direction === "asc" ? 1 : -1;
   const firstValue = first[sortKey];
   const secondValue = second[sortKey];
@@ -418,9 +571,4 @@ function compareRows(
   }
 
   return (Number(firstValue) - Number(secondValue)) * modifier;
-}
-
-function escapeCsv(value: string | number | null) {
-  const text = String(value ?? "");
-  return `"${text.replace(/"/g, '""')}"`;
 }

@@ -11,4 +11,9 @@ export class GpAnalysisController {
   findDailyAnalysis(@Query('date') date?: string) {
     return this.gpAnalysisService.findDailyAnalysis(date);
   }
+
+  @Get('monthly')
+  findMonthlyAnalysis(@Query('month') month?: string) {
+    return this.gpAnalysisService.findMonthlyAnalysis(month);
+  }
 }

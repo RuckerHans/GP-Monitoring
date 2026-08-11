@@ -19,6 +19,16 @@ export interface DailyGpAnalysis {
   mainServerDatabaseName: string;
 }
 
+export interface MonthlyGpAnalysis {
+  count: number;
+  month: string | null;
+  branch: string;
+  sales: number;
+  profit: number;
+  gp: number;
+  mainServerDatabaseName: string;
+}
+
 export interface Branch {
   id: string;
   branchCode: string;
