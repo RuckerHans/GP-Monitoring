@@ -29,7 +29,7 @@ export class BranchesService {
   constructor(@Inject(MYSQL_POOL) private readonly mysqlPool: Pool) {}
 
   async findBranches(): Promise<Branch[]> {
-    const [rows] = await this.mysqlPool.execute<BranchRow[]>(
+    const [rows] = await this.mysqlPool.query<BranchRow[]>(
       `
         SELECT
           CAST(id AS CHAR) AS id,

@@ -1,21 +1,28 @@
 import type { Pool } from 'mysql2/promise';
 import { BranchesService } from './branches.service';
 
+// NOTE: findBranches() uses pool.query(), not pool.execute(), specifically because mysql2's
+// execute() (prepared statements / binary protocol) does not expand an array bound to `?` for
+// an IN (?) clause the way query() (text protocol) does — under execute() the excluded-code
+// filter silently fails to match, and excluded rows still come back. That bug is invisible to
+// this mocked unit test, since the mock just echoes back whatever the test tells it to and
+// never exercises real IN (?) parameter binding. If you touch this file's SQL or its
+// parameter shape again, verify the query against a real MySQL connection, not just this file.
 describe('BranchesService', () => {
-  const execute = jest.fn();
-  const mysqlPool = { execute } as unknown as Pool;
+  const query = jest.fn();
+  const mysqlPool = { query } as unknown as Pool;
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('queries with the _FC, mainserverdatabasename, and excluded-branch-code filters', async () => {
-    execute.mockResolvedValue([[]]);
+    query.mockResolvedValue([[]]);
     const service = new BranchesService(mysqlPool);
 
     await service.findBranches();
 
-    const [sql, params] = execute.mock.calls[0];
+    const [sql, params] = query.mock.calls[0];
 
     // _FC branches are excluded structurally
     expect(sql).toContain("LOWER(branchlocation) NOT LIKE '%\\_fc'");
@@ -31,7 +38,7 @@ describe('BranchesService', () => {
     // The WHERE clause filters BG2 out server-side; since this is a unit test without a
     // live database, we simulate that by having the mock only return rows that would
     // survive the query and assert BG2 never appears in the mapped output.
-    execute.mockResolvedValue([
+    query.mockResolvedValue([
       [
         {
           id: '1',
@@ -57,12 +64,12 @@ describe('BranchesService', () => {
       },
     ]);
 
-    const [, params] = execute.mock.calls[0];
+    const [, params] = query.mock.calls[0];
     expect(params).toEqual([['BG2']]);
   });
 
   it('maps snake_case rows to the Branch shape', async () => {
-    execute.mockResolvedValue([
+    query.mockResolvedValue([
       [
         {
           id: '2',
