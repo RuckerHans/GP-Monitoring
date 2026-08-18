@@ -21,6 +21,11 @@ interface BranchRow extends RowDataPacket {
 
 @Injectable()
 export class BranchesService {
+  private readonly excludedBranchCodes = ['BG2']; // BAGBAGUIN2 — confirmed test/phantom
+                                                     // branch, same record also present in
+                                                     // TFinished Monitoring's datacenter API
+                                                     // with a blank ws_terminal field there
+
   constructor(@Inject(MYSQL_POOL) private readonly mysqlPool: Pool) {}
 
   async findBranches(): Promise<Branch[]> {
@@ -37,8 +42,10 @@ export class BranchesService {
           AND LOWER(branchlocation) NOT LIKE '%\\_fc'
           AND mainserverdatabasename IS NOT NULL
           AND mainserverdatabasename <> ''
+          AND branchcode NOT IN (?)
         ORDER BY branchlocation ASC
       `,
+      [this.excludedBranchCodes],
     );
 
     return rows.map((row) => ({
