@@ -31,13 +31,13 @@ describe('BranchesService', () => {
     expect(sql).toContain("mainserverdatabasename <> ''");
     // known bad/test branches are excluded explicitly by code
     expect(sql).toContain('branchcode NOT IN (?)');
-    expect(params).toEqual([['BG2']]);
+    expect(params).toEqual([['BG2', 'ARC']]);
   });
 
-  it('excludes BG2 (BAGBAGUIN2) from the mapped result', async () => {
-    // The WHERE clause filters BG2 out server-side; since this is a unit test without a
+  it('excludes BG2 (BAGBAGUIN2) and ARC (AREAC) from the mapped result', async () => {
+    // The WHERE clause filters BG2/ARC out server-side; since this is a unit test without a
     // live database, we simulate that by having the mock only return rows that would
-    // survive the query and assert BG2 never appears in the mapped output.
+    // survive the query and assert BG2/ARC never appear in the mapped output.
     query.mockResolvedValue([
       [
         {
@@ -54,6 +54,7 @@ describe('BranchesService', () => {
     const branches = await service.findBranches();
 
     expect(branches.some((branch) => branch.branchCode === 'BG2')).toBe(false);
+    expect(branches.some((branch) => branch.branchCode === 'ARC')).toBe(false);
     expect(branches).toEqual([
       {
         id: '1',
@@ -65,7 +66,7 @@ describe('BranchesService', () => {
     ]);
 
     const [, params] = query.mock.calls[0];
-    expect(params).toEqual([['BG2']]);
+    expect(params).toEqual([['BG2', 'ARC']]);
   });
 
   it('maps snake_case rows to the Branch shape', async () => {

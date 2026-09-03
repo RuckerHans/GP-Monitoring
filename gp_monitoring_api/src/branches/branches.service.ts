@@ -21,10 +21,12 @@ interface BranchRow extends RowDataPacket {
 
 @Injectable()
 export class BranchesService {
-  private readonly excludedBranchCodes = ['BG2']; // BAGBAGUIN2 — confirmed test/phantom
-                                                     // branch, same record also present in
-                                                     // TFinished Monitoring's datacenter API
-                                                     // with a blank ws_terminal field there
+  private readonly excludedBranchCodes = [
+    'BG2', // BAGBAGUIN2 — confirmed test/phantom branch, same record also present in
+           // TFinished Monitoring's datacenter API with a blank ws_terminal field there
+    'ARC', // AREAC — inactive (isactive: 0) test branch for San Roque Supermarket Retail
+           // Systems, Inc.; blank ws_terminal/po_branch_code, not a real location
+  ];
 
   constructor(@Inject(MYSQL_POOL) private readonly mysqlPool: Pool) {}
 
