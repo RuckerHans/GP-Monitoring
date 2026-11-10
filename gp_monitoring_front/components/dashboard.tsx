@@ -327,7 +327,7 @@ export function Dashboard({ initialUser }: DashboardProps) {
       <main className="dashboard-page">
 
       <section className="control-strip" aria-label="Report controls">
-        <div className="filter-heading"><div><p className="eyebrow">Your report</p><h2>{mode === "daily" ? "Daily" : "Monthly"} performance</h2><span>{category === "compal" ? "Compal" : "Branch"} overview · {activeLabel}</span></div>        <div className="report-actions">
+        <div className="filter-heading"><div><h2>{mode === "daily" ? "Daily" : "Monthly"} performance</h2><span>{category === "compal" ? "Compal" : "Branch"} overview · {activeLabel}</span></div>        <div className="report-actions">
         <button className="icon-text-button" onClick={() => void refresh()} title="Refresh">
           <RefreshCcw size={18} />
           Refresh
