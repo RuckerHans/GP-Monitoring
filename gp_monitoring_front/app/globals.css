@@ -952,3 +952,24 @@ tfoot td {
   .dashboard-shell .header-brand { gap: 9px; }
   .dashboard-shell .topbar-actions .ghost-button { width: auto; white-space: nowrap; }
 }
+
+/* Fluid workspace: use the screen instead of a centered fixed-width canvas. */
+.dashboard-shell .topbar-inner,
+.dashboard-shell .dashboard-page {
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+.dashboard-shell .topbar-inner { padding-left: 24px; padding-right: 24px; }
+.dashboard-shell .dashboard-page { padding: 20px 24px 32px; }
+@media (min-width: 1800px) {
+  .dashboard-shell .filter-grid {
+    grid-template-columns: 240px 280px minmax(240px, 1fr) 240px;
+    gap: 24px;
+  }
+}
+@media (max-width: 700px) {
+  .dashboard-shell .topbar-inner { padding-left: 16px; padding-right: 16px; }
+  .dashboard-shell .dashboard-page { padding: 16px; }
+}
