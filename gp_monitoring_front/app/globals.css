@@ -917,3 +917,38 @@ tfoot td {
   .dashboard-shell > .topbar h1 { font-size: 24px; }
   .dashboard-shell > .topbar .dashboard-subtitle { max-width: 260px; }
 }
+
+/* Compact header and consistent dashboard alignment */
+.dashboard-shell { --dashboard-width: 1440px; }
+.dashboard-shell .topbar-inner,
+.dashboard-shell .dashboard-page { width: min(var(--dashboard-width), 100%); }
+.dashboard-shell .topbar-inner { min-height: 76px; padding: 12px 28px; gap: 20px; }
+.dashboard-shell .header-brand { gap: 12px; }
+.dashboard-shell .topbar-title { gap: 2px; }
+.dashboard-shell > .topbar .eyebrow { margin: 0; font-size: 9px; letter-spacing: 1.3px; line-height: 1.4; }
+.dashboard-shell > .topbar h1 { font-size: 23px; line-height: 1.2; letter-spacing: -.6px; }
+.dashboard-shell > .topbar .dashboard-subtitle { display: none; }
+.dashboard-shell .brand-mark { width: 40px; height: 40px; border-radius: 10px; }
+.dashboard-shell .brand-mark svg { width: 23px; height: 23px; }
+.dashboard-shell .topbar-actions { gap: 14px; }
+.dashboard-shell > .topbar .ghost-button { min-height: 36px; padding: 8px 12px; font-size: 12px; }
+.dashboard-shell .dashboard-page { padding: 20px 28px 32px; }
+.dashboard-shell .filter-heading { padding: 18px 22px; }
+.dashboard-shell .filter-heading h2 { font-size: 20px; }
+.dashboard-shell .filter-grid { padding: 18px 22px 20px; gap: 18px; grid-template-columns: 220px 260px minmax(180px, 1fr) 220px; }
+@media (max-width: 1200px) {
+  .dashboard-shell .filter-grid { grid-template-columns: 1fr 1.2fr; }
+}
+@media (max-width: 700px) {
+  .dashboard-shell .topbar-inner { padding: 12px 18px; min-height: 72px; flex-wrap: nowrap; gap: 12px; }
+  .dashboard-shell .topbar-actions { gap: 8px; }
+  .dashboard-shell .topbar-actions .signed-in { display: none; }
+  .dashboard-shell > .topbar h1 { font-size: 20px; }
+  .dashboard-shell > .topbar .eyebrow { font-size: 8px; letter-spacing: .8px; }
+  .dashboard-shell .dashboard-page { padding: 18px; }
+}
+@media (max-width: 560px) {
+  .dashboard-shell .filter-grid { grid-template-columns: 1fr; padding: 18px; }
+  .dashboard-shell .header-brand { gap: 9px; }
+  .dashboard-shell .topbar-actions .ghost-button { width: auto; white-space: nowrap; }
+}
