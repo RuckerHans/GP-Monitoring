@@ -817,3 +817,35 @@ tfoot td {
     width: auto;
   }
 }
+
+/* Dashboard header and grouped report controls */
+.dashboard-page .topbar { padding: 22px 0 24px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
+.dashboard-page .topbar h1 { font-size: clamp(28px, 3vw, 40px); letter-spacing: -1.2px; line-height: 1.15; margin: 0; }
+.dashboard-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 14px; }
+.control-strip { display: block; padding: 0; overflow: hidden; background: #fff; border-radius: 12px; }
+.filter-heading { display: flex; align-items: baseline; gap: 14px; padding: 18px 20px 0; }
+.filter-heading h2 { margin: 0; font-size: 15px; }
+.filter-heading > span { color: var(--muted); font-size: 12px; }
+.filter-grid { display: grid; grid-template-columns: 220px 260px minmax(180px, 1fr) 220px; gap: 20px; padding: 18px 20px 22px; align-items: end; }
+.filter-field { min-width: 0; display: grid; gap: 8px; }
+.filter-label { font-size: 11px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: var(--muted); }
+.filter-field .segmented-control { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.filter-field .date-control > svg, .filter-field .date-control > span:not(.period-picker) { display: none; }
+.filter-field .date-control { min-height: 50px; }
+.filter-field .date-control input, .filter-field .period-picker { width: 100%; }
+.filter-field .select-wrap-month { flex: 1; width: auto; }
+.filter-field .search-control { flex: initial; gap: 0; position: relative; }
+.filter-field .search-control svg { position: absolute; left: 12px; }
+.filter-field .search-control input { padding-left: 38px; height: 50px; min-width: 0; }
+.report-action-row { border-top: 1px solid var(--line); background: #f8faf9; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.report-actions { display: flex; gap: 8px; }
+.report-actions > button:last-child { background: var(--brand); color: white; border-color: var(--brand); }
+@media (max-width: 1200px) { .filter-grid { grid-template-columns: 1fr 1.2fr; } }
+@media (max-width: 560px) {
+  .filter-grid { grid-template-columns: 1fr; gap: 16px; padding: 18px; }
+  .filter-heading { display: grid; gap: 4px; padding: 18px 18px 0; }
+  .report-action-row { align-items: stretch; flex-direction: column; padding: 14px 18px; }
+  .report-actions > button { flex: 1; }
+  .dashboard-page .topbar { gap: 16px; }
+  .topbar-actions { justify-content: space-between; }
+}

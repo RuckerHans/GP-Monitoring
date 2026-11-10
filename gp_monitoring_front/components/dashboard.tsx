@@ -36,7 +36,6 @@ import { clearUser, setUser } from "@/lib/store/slices/authSlice";
 
 type SortKey = "count" | "branch" | "sales" | "profit" | "gp";
 type SortDirection = "asc" | "desc";
-type Tab = "gp" | "branches";
 type ReportMode = "daily" | "monthly";
 type ActiveRow = DailyGpAnalysis | MonthlyGpAnalysis;
 
@@ -56,7 +55,6 @@ export function Dashboard({ initialUser }: DashboardProps) {
   const [monthNum, setMonthNum] = useState(() => currentMonthValue.slice(5, 7));
   const [category, setCategory] = useState<"branch" | "compal">("branch");
   const [query, setQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<Tab>("gp");
   const [sortKey, setSortKey] = useState<SortKey>("count");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
@@ -311,8 +309,9 @@ export function Dashboard({ initialUser }: DashboardProps) {
     <main className="dashboard-page">
       <header className="topbar">
         <div className="topbar-title">
-          <p className="eyebrow">Daily performance</p>
+          <p className="eyebrow">Performance dashboard</p>
           <h1>GP Monitoring</h1>
+          <p className="dashboard-subtitle">Sales, profit and gross margin across your locations.</p>
         </div>
         <div className="topbar-actions">
           <span className="signed-in">{user?.username ?? "Signed in"}</span>
@@ -324,6 +323,9 @@ export function Dashboard({ initialUser }: DashboardProps) {
       </header>
 
       <section className="control-strip" aria-label="Report controls">
+        <div className="filter-heading"><h2>Report filters</h2><span>Choose a location group and reporting period</span></div>
+        <div className="filter-grid">
+        <div className="filter-field"><span className="filter-label">Frequency</span>
         <div className="segmented-control" role="tablist" aria-label="Report mode">
           <button
             className={mode === "daily" ? "active" : ""}
@@ -345,6 +347,8 @@ export function Dashboard({ initialUser }: DashboardProps) {
           </button>
         </div>
 
+        </div>
+        <div className="filter-field"><span className="filter-label">Reporting period</span>
         {mode === "daily" ? (
           <label className="date-control">
             <CalendarDays size={18} />
@@ -380,15 +384,20 @@ export function Dashboard({ initialUser }: DashboardProps) {
           </label>
         )}
 
+        </div>
+        <div className="filter-field filter-search"><span className="filter-label">Search locations</span>
         <label className="search-control">
           <Search size={18} />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search branch or database"
+            aria-label="Search locations"
+            placeholder="Branch name or database…"
           />
         </label>
 
+        </div>
+        <div className="filter-field"><span className="filter-label">Location group</span>
         <div className="segmented-control" role="group" aria-label="Location category">
           {(["branch", "compal"] as const).map((option) => (
             <button key={option} type="button" aria-pressed={category === option}
@@ -397,27 +406,11 @@ export function Dashboard({ initialUser }: DashboardProps) {
             </button>
           ))}
         </div>
-        <div className="segmented-control" role="tablist" aria-label="Views">
-          <button
-            className={activeTab === "gp" ? "active" : ""}
-            onClick={() => setActiveTab("gp")}
-            role="tab"
-            type="button"
-          >
-            <Table2 size={16} />
-            GP
-          </button>
-          <button
-            className={activeTab === "branches" ? "active" : ""}
-            onClick={() => setActiveTab("branches")}
-            role="tab"
-            type="button"
-          >
-            <Building2 size={16} />
-            Branches
-          </button>
         </div>
-
+        </div>
+        <div className="report-action-row">
+        <span className="report-context">{category === "compal" ? "Compal" : "Branch"} performance · {activeLabel}</span>
+        <div className="report-actions">
         <button className="icon-text-button" onClick={() => void refresh()} title="Refresh">
           <RefreshCcw size={18} />
           Refresh
@@ -430,6 +423,8 @@ export function Dashboard({ initialUser }: DashboardProps) {
           <FileSpreadsheet size={18} />
           Export Excel
         </button>
+        </div>
+        </div>
       </section>
 
       <section className="metric-grid" aria-label="Summary">
@@ -445,7 +440,7 @@ export function Dashboard({ initialUser }: DashboardProps) {
 
       {error ? <p className="data-error">{error}</p> : null}
 
-      {activeTab === "gp" ? (
+      {(
         <section className="data-section" aria-label="GP analysis">
           <div className="section-heading">
             <div>
@@ -538,32 +533,6 @@ export function Dashboard({ initialUser }: DashboardProps) {
                 </tr>
               </tfoot>
             </table>
-          </div>
-        </section>
-      ) : (
-        <section className="data-section" aria-label="Branch directory">
-          <div className="section-heading">
-            <div>
-              <h2>{category === "compal" ? "Compal" : "Branch"} Directory</h2>
-              <p>{filteredBranches.length} configured branches</p>
-            </div>
-          </div>
-
-          <div className="branch-grid">
-            {isBranchesLoading ? (
-              <p className="empty-state">Loading branch directory...</p>
-            ) : filteredBranches.length ? (
-              filteredBranches.map((branch: Branch) => (
-                <article className="branch-card" key={branch.id}>
-                  <p>{branch.branchCode}</p>
-                  <h3>{branch.branchLocation}</h3>
-                  <span>{branch.branchName}</span>
-                  <small>{branch.mainServerDatabaseName}</small>
-                </article>
-              ))
-            ) : (
-              <p className="empty-state">No branches match your search.</p>
-            )}
           </div>
         </section>
       )}
