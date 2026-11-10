@@ -306,8 +306,9 @@ export function Dashboard({ initialUser }: DashboardProps) {
   }, [filteredRows, mode, date, month]);
 
   return (
-    <main className="dashboard-page">
+    <div className="dashboard-shell">
       <header className="topbar">
+      <div className="topbar-inner">
         <div className="header-brand"><div className="brand-mark"><Table2 size={28} /></div><div className="topbar-title">
           <p className="eyebrow">Performance dashboard</p>
           <h1>GP Monitoring</h1>
@@ -321,7 +322,9 @@ export function Dashboard({ initialUser }: DashboardProps) {
             Sign out
           </button>
         </div>
+      </div>
       </header>
+      <main className="dashboard-page">
 
       <section className="control-strip" aria-label="Report controls">
         <div className="filter-heading"><div><p className="eyebrow">Your report</p><h2>{mode === "daily" ? "Daily" : "Monthly"} performance</h2><span>{category === "compal" ? "Compal" : "Branch"} overview · {activeLabel}</span></div>        <div className="report-actions">
@@ -534,6 +537,7 @@ export function Dashboard({ initialUser }: DashboardProps) {
         </section>
       )}
     </main>
+    </div>
   );
 }
 

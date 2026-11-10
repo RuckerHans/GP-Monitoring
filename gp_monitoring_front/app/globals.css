@@ -888,3 +888,32 @@ tfoot td {
   .filter-heading .report-actions { width: 100%; }
   .filter-heading .report-actions button { flex: 1; }
 }
+
+/* Edge-to-edge application header with aligned content */
+.dashboard-shell > .topbar {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid #205b49;
+  border-radius: 0;
+  background: linear-gradient(115deg, #103e34 0%, #17624e 65%, #227c60 100%);
+  color: white;
+  box-shadow: 0 4px 18px rgba(16, 62, 52, .12);
+}
+.topbar-inner { width: min(1440px, 100%); margin: 0 auto; padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.dashboard-shell > .topbar .eyebrow { color: #a8dfc6; letter-spacing: 1.7px; font-size: 10px; }
+.dashboard-shell > .topbar h1 { color: white; font-size: 28px; line-height: 1.15; letter-spacing: -.8px; margin: 0; }
+.dashboard-shell > .topbar .dashboard-subtitle { color: #c6dfd5; font-size: 12px; margin: 4px 0 0; }
+.dashboard-shell > .topbar .signed-in { color: #d4e9df; font-size: 12px; letter-spacing: 1px; }
+.dashboard-shell > .topbar .ghost-button { background: rgba(255,255,255,.08); color: white; border-color: rgba(255,255,255,.25); }
+.dashboard-shell > .topbar .ghost-button:hover { background: rgba(255,255,255,.16); }
+.dashboard-shell .brand-mark { width: 48px; height: 48px; border-radius: 12px; }
+.dashboard-shell .dashboard-page { padding-top: 26px; }
+@media (max-width: 700px) {
+  .topbar-inner { padding: 18px; flex-wrap: wrap; gap: 18px; }
+  .topbar-inner .topbar-actions { width: auto; margin-left: auto; }
+  .dashboard-shell > .topbar h1 { font-size: 24px; }
+  .dashboard-shell > .topbar .dashboard-subtitle { max-width: 260px; }
+}
