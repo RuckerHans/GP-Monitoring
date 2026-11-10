@@ -34,7 +34,7 @@ import {
 import { useAppSelector, useAppDispatch } from "@/lib/store/hooks";
 import { clearUser, setUser } from "@/lib/store/slices/authSlice";
 
-type SortKey = "count" | "branch" | "sales" | "profit" | "gp";
+type SortKey = "branch" | "sales" | "profit" | "gp";
 type SortDirection = "asc" | "desc";
 type ReportMode = "daily" | "monthly";
 type ActiveRow = DailyGpAnalysis | MonthlyGpAnalysis;
@@ -55,7 +55,7 @@ export function Dashboard({ initialUser }: DashboardProps) {
   const [monthNum, setMonthNum] = useState(() => currentMonthValue.slice(5, 7));
   const [category, setCategory] = useState<"branch" | "compal">("branch");
   const [query, setQuery] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("count");
+  const [sortKey, setSortKey] = useState<SortKey>("branch");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   const month = useMemo(() => buildMonthValue(year, monthNum), [year, monthNum]);
@@ -111,7 +111,8 @@ export function Dashboard({ initialUser }: DashboardProps) {
           row.mainServerDatabaseName.toLowerCase().includes(normalizedQuery)
         );
       })
-        .sort((first: ActiveRow, second: ActiveRow) => compareRows(first, second, sortKey, sortDirection));
+        .sort((first: ActiveRow, second: ActiveRow) => compareRows(first, second, sortKey, sortDirection))
+        .map((row, index) => ({ ...row, count: index + 1 }));
   }, [query, activeRows, sortDirection, sortKey, categoryDatabases]);
 
   const filteredBranches = useMemo(() => {
@@ -460,13 +461,7 @@ export function Dashboard({ initialUser }: DashboardProps) {
               </colgroup>
               <thead>
                 <tr>
-                  <SortableHeader
-                    align="center"
-                    label="Count"
-                    sortKey="count"
-                    activeKey={sortKey}
-                    onSort={changeSort}
-                  />
+                  <th className="center-header" scope="col">Count</th>
                   <SortableHeader label="Branches" sortKey="branch" activeKey={sortKey} onSort={changeSort} />
                   <SortableHeader
                     align="right"
