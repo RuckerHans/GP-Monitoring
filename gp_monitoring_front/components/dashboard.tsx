@@ -54,6 +54,7 @@ export function Dashboard({ initialUser }: DashboardProps) {
   const [date, setDate] = useState(getYesterdayInputDate());
   const [year, setYear] = useState(() => Number(currentMonthValue.slice(0, 4)));
   const [monthNum, setMonthNum] = useState(() => currentMonthValue.slice(5, 7));
+  const [category, setCategory] = useState<"branch" | "compal">("branch");
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("gp");
   const [sortKey, setSortKey] = useState<SortKey>("count");
@@ -88,10 +89,20 @@ export function Dashboard({ initialUser }: DashboardProps) {
 
   const error = (activeError as any)?.data?.message ?? (branchesError as any)?.data?.message ?? "";
 
+  const categoryBranches = useMemo(() => branches.filter((branch) => {
+    const compal = branch.branchLocation.toLowerCase().endsWith("_fc") ||
+      ["BG2", "ARC"].includes(branch.branchCode.toUpperCase());
+    return compal === (category === "compal");
+  }), [branches, category]);
+  const categoryDatabases = useMemo(() => new Set(categoryBranches.map((branch) =>
+    branch.mainServerDatabaseName
+  )), [categoryBranches]);
+
   const filteredRows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
     return [...activeRows]
+      .filter((row: ActiveRow) => categoryDatabases.has(row.mainServerDatabaseName))
       .filter((row: ActiveRow) => {
         if (!normalizedQuery) {
           return true;
@@ -103,12 +114,12 @@ export function Dashboard({ initialUser }: DashboardProps) {
         );
       })
         .sort((first: ActiveRow, second: ActiveRow) => compareRows(first, second, sortKey, sortDirection));
-  }, [query, activeRows, sortDirection, sortKey]);
+  }, [query, activeRows, sortDirection, sortKey, categoryDatabases]);
 
   const filteredBranches = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return branches.filter((branch: Branch) => {
+    return categoryBranches.filter((branch: Branch) => {
       if (!normalizedQuery) {
         return true;
       }
@@ -120,7 +131,7 @@ export function Dashboard({ initialUser }: DashboardProps) {
         branch.mainServerDatabaseName
       ].some((value: string) => value.toLowerCase().includes(normalizedQuery));
     });
-  }, [branches, query]);
+  }, [categoryBranches, query]);
 
   const totals = useMemo(() => {
     const sales = filteredRows.reduce((sum, row) => sum + row.sales, 0);
@@ -378,6 +389,14 @@ export function Dashboard({ initialUser }: DashboardProps) {
           />
         </label>
 
+        <div className="segmented-control" role="group" aria-label="Location category">
+          {(["branch", "compal"] as const).map((option) => (
+            <button key={option} type="button" aria-pressed={category === option}
+              className={category === option ? "active" : ""} onClick={() => setCategory(option)}>
+              {option === "branch" ? "Branch" : "Compal"}
+            </button>
+          ))}
+        </div>
         <div className="segmented-control" role="tablist" aria-label="Views">
           <button
             className={activeTab === "gp" ? "active" : ""}
@@ -525,7 +544,7 @@ export function Dashboard({ initialUser }: DashboardProps) {
         <section className="data-section" aria-label="Branch directory">
           <div className="section-heading">
             <div>
-              <h2>Branch Directory</h2>
+              <h2>{category === "compal" ? "Compal" : "Branch"} Directory</h2>
               <p>{filteredBranches.length} configured branches</p>
             </div>
           </div>
