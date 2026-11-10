@@ -308,10 +308,11 @@ export function Dashboard({ initialUser }: DashboardProps) {
   return (
     <main className="dashboard-page">
       <header className="topbar">
-        <div className="topbar-title">
+        <div className="header-brand"><div className="brand-mark"><Table2 size={28} /></div><div className="topbar-title">
           <p className="eyebrow">Performance dashboard</p>
           <h1>GP Monitoring</h1>
           <p className="dashboard-subtitle">Sales, profit and gross margin across your locations.</p>
+        </div>
         </div>
         <div className="topbar-actions">
           <span className="signed-in">{user?.username ?? "Signed in"}</span>
@@ -323,7 +324,20 @@ export function Dashboard({ initialUser }: DashboardProps) {
       </header>
 
       <section className="control-strip" aria-label="Report controls">
-        <div className="filter-heading"><h2>Report filters</h2><span>Choose a location group and reporting period</span></div>
+        <div className="filter-heading"><div><p className="eyebrow">Your report</p><h2>{mode === "daily" ? "Daily" : "Monthly"} performance</h2><span>{category === "compal" ? "Compal" : "Branch"} overview · {activeLabel}</span></div>        <div className="report-actions">
+        <button className="icon-text-button" onClick={() => void refresh()} title="Refresh">
+          <RefreshCcw size={18} />
+          Refresh
+        </button>
+        <button
+          className="icon-text-button"
+          onClick={() => void exportExcel()}
+          disabled={activeIsLoading || !filteredRows.length}
+        >
+          <FileSpreadsheet size={18} />
+          Export Excel
+        </button>
+        </div></div>
         <div className="filter-grid">
         <div className="filter-field"><span className="filter-label">Frequency</span>
         <div className="segmented-control" role="tablist" aria-label="Report mode">
@@ -406,23 +420,6 @@ export function Dashboard({ initialUser }: DashboardProps) {
             </button>
           ))}
         </div>
-        </div>
-        </div>
-        <div className="report-action-row">
-        <span className="report-context">{category === "compal" ? "Compal" : "Branch"} performance · {activeLabel}</span>
-        <div className="report-actions">
-        <button className="icon-text-button" onClick={() => void refresh()} title="Refresh">
-          <RefreshCcw size={18} />
-          Refresh
-        </button>
-        <button
-          className="icon-text-button"
-          onClick={() => void exportExcel()}
-          disabled={activeIsLoading || !filteredRows.length}
-        >
-          <FileSpreadsheet size={18} />
-          Export Excel
-        </button>
         </div>
         </div>
       </section>

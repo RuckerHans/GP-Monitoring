@@ -849,3 +849,42 @@ tfoot td {
   .dashboard-page .topbar { gap: 16px; }
   .topbar-actions { justify-content: space-between; }
 }
+
+/* Strong application identity and report hierarchy */
+.dashboard-page .topbar {
+  position: relative;
+  background: linear-gradient(115deg, #103e34 0%, #17624e 65%, #227c60 100%);
+  color: #fff;
+  border: 1px solid #205b49;
+  border-radius: 18px;
+  padding: 30px 32px;
+  margin: 6px 0 26px;
+  box-shadow: 0 12px 30px rgba(16, 62, 52, .14);
+  overflow: hidden;
+}
+.header-brand { display: flex; align-items: center; gap: 20px; }
+.brand-mark { display: grid; place-items: center; width: 62px; height: 62px; flex-shrink: 0; border-radius: 16px; color: #c1f5d8; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22); }
+.dashboard-page .topbar .eyebrow { color: #a8dfc6; letter-spacing: 1.7px; font-size: 10px; }
+.dashboard-page .topbar h1 { font-size: clamp(28px, 3vw, 38px); color: #fff; letter-spacing: -1px; }
+.dashboard-page .topbar .dashboard-subtitle { color: #c6dfd5; font-size: 13px; }
+.dashboard-page .topbar .signed-in { color: #d4e9df; font-size: 12px; letter-spacing: 1px; }
+.dashboard-page .topbar .ghost-button { background: rgba(255,255,255,.08); color: white; border-color: rgba(255,255,255,.25); }
+.dashboard-page .topbar .ghost-button:hover { background: rgba(255,255,255,.16); }
+.filter-heading { justify-content: space-between; align-items: center; padding: 22px 24px; gap: 20px; border-bottom: 1px solid var(--line); }
+.filter-heading .eyebrow { font-size: 10px; letter-spacing: 1.3px; margin: 0 0 5px; }
+.filter-heading h2 { font-size: 21px; letter-spacing: -.4px; margin: 0 0 5px; }
+.filter-heading > div > span { color: var(--muted); font-size: 13px; }
+.filter-grid { padding: 22px 24px 24px; background: #fbfdfc; }
+.report-actions { flex-shrink: 0; }
+.report-actions button { min-height: 44px; }
+.metric-card { border-radius: 12px; }
+.metric-card:first-child { border-top: 3px solid #23795e; }
+.metric-card:last-child { background: #edf7f1; border-color: #bcd8c9; }
+@media (max-width: 700px) {
+  .dashboard-page .topbar { padding: 24px; }
+  .header-brand { gap: 14px; }
+  .brand-mark { width: 48px; height: 48px; border-radius: 12px; }
+  .filter-heading { display: flex; flex-wrap: wrap; padding: 20px; }
+  .filter-heading .report-actions { width: 100%; }
+  .filter-heading .report-actions button { flex: 1; }
+}
