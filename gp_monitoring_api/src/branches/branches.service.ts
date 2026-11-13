@@ -34,6 +34,7 @@ export class BranchesService {
           mainserverdatabasename
         FROM branches
         WHERE branchlocation IS NOT NULL
+          AND (is_active IS NULL OR is_active <> 1)
           AND mainserverdatabasename IS NOT NULL
           AND mainserverdatabasename <> ''
         ORDER BY branchlocation ASC
