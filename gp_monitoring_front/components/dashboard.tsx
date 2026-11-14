@@ -61,14 +61,14 @@ export function Dashboard({ initialUser }: DashboardProps) {
   const month = useMemo(() => buildMonthValue(year, monthNum), [year, monthNum]);
 
   const {
-    data: dailyRows = [],
-    isLoading: isDailyLoading,
+    currentData: dailyRows = [],
+    isFetching: isDailyLoading,
     refetch: refetchDaily,
     error: dailyError
   } = useGetDailyQuery(date, { skip: mode !== "daily" });
   const {
-    data: monthlyRows = [],
-    isLoading: isMonthlyLoading,
+    currentData: monthlyRows = [],
+    isFetching: isMonthlyLoading,
     refetch: refetchMonthly,
     error: monthlyError
   } = useGetMonthlyQuery(month, { skip: mode !== "monthly" });
@@ -589,3 +589,4 @@ function compareRows(first: ActiveRow, second: ActiveRow, sortKey: SortKey, dire
 
   return (Number(firstValue) - Number(secondValue)) * modifier;
 }
+
